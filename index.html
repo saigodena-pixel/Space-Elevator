@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Space Elevator</title>
+
+<!-- Google Fonts: Orbitron for headings/UI, Rubik for body text -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
+
+<!-- Styles live in their own file for easier editing -->
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Animated starfield background, drawn on canvas by js/script.js -->
+<canvas id="stars"></canvas>
+
+<!-- ============================================================
+     LANDING / "ELEVATOR LOBBY" SCREEN
+     The first thing the user sees: an elevator car graphic and a
+     call panel listing every scale level as a floor button.
+     ============================================================ -->
+<div id="landing">
+  <div class="landingInner">
+    <h1 class="brand">SPACE <span>ELEVATOR</span></h1>
+    <p class="landingSub">Step in and pick a floor — each one drops you at a different scale of the Universe.</p>
+    <div class="elevatorWrap">
+      <div class="elevatorCar">
+        <div class="floorDisplay" id="floorDisplay">G</div>
+        <div class="doors">
+          <div class="door left"></div>
+          <div class="door right"></div>
+        </div>
+      </div>
+      <!-- Floor buttons are generated dynamically in script.js from the `levels` array -->
+      <div class="panel" id="panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Full-screen elevator doors used for the travel transition between
+     the lobby and a level, and between levels via the 🛗 button -->
+<div id="doorOverlay">
+  <div class="doorOv left"></div>
+  <div class="doorOv right"></div>
+  <div class="travelDisplay" id="travelDisplay">G</div>
+</div>
+
+<!-- ============================================================
+     MAIN APP: header, the 7 scale levels, nav controls, quiz modal
+     Hidden until a floor is chosen on the landing screen.
+     ============================================================ -->
+<div id="app">
+
+  <header>
+    <div class="brand">SPACE <span>ELEVATOR</span></div>
+    <div id="scaleTag">SCALE: 10⁻¹⁵ m</div>
+    <div id="headerBtns">
+      <button class="iconbtn" id="backBtn" title="Back to elevator" onclick="showLanding()">🛗</button>
+      <button class="iconbtn" id="factBtn" title="Random cosmic fact" onclick="randomFact()">✨</button>
+      <button class="iconbtn" id="muteBtn" title="Toggle sound" onclick="toggleMute()">🔊</button>
+    </div>
+  </header>
+
+  <!-- Pop-up toast used by the "Random Cosmic Fact" button -->
+  <div id="factToast"></div>
+
+  <!-- Horizontally-sliding levels: Quantum Foam -> Micro World -> Earth
+       -> Solar System -> Milky Way -> Universe -> Multiverse -->
+  <div id="slider">
+
+    <section class="level" id="lq">
+      <div class="card">
+        <div class="visual" style="background:radial-gradient(circle at 35% 30%,#fff,#7cf 40%,#113 80%);--glow:rgba(150,220,255,.55);">
+          <img src="images/quantum.jpg" alt="Quantum Foam" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">⚛️</span>
+        </div>
+        <h2>Quantum Foam</h2>
+        <p class="tagline">Smaller than small — the edge of physics</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> At the Planck length (~10⁻³⁵ m), our normal ideas of space and time break down.</div>
+          <div class="fact"><b>Fact:</b> A proton is about 100,000 times smaller than the smallest atom.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="level" id="l0">
+      <div class="card">
+        <div class="visual">
+          <img src="images/microworld.jpg" alt="Micro World" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">🧬</span>
+        </div>
+        <h2>Micro World</h2>
+        <p class="tagline">Click, then move your mouse — pinch with fingers to zoom</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> A single teaspoon of soil holds more microbes than there are people on Earth.</div>
+          <div class="fact"><b>Fact:</b> Millions of atoms could line up across the head of a pin.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="level" id="l1">
+      <div class="card">
+        <div class="visual">
+          <img src="images/earth.jpg" alt="Earth" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">🌍</span>
+        </div>
+        <h2>Earth</h2>
+        <p class="tagline">Our home — a pale blue dot</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> Earth is the only place we know of where life exists.</div>
+          <div class="fact"><b>Fact:</b> One full rotation on its axis takes about 24 hours.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="level" id="l2">
+      <div class="card">
+        <div class="visual">
+          <img src="images/solarsystem.jpg" alt="Solar System" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">☀️</span>
+        </div>
+        <h2>Solar System</h2>
+        <p class="tagline">Tap a planet 🪐</p>
+        <!-- Planet buttons are generated dynamically in script.js from the `planets` array -->
+        <div class="planets" id="planetRow"></div>
+        <div id="planetInfo"></div>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> The Sun holds about 99.8% of all the mass in the Solar System.</div>
+          <div class="fact"><b>Fact:</b> Sunlight takes roughly 8 minutes to reach Earth.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="level" id="l3">
+      <div class="card">
+        <div class="visual">
+          <img src="images/milkyway.jpg" alt="Milky Way" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">🌌</span>
+        </div>
+        <h2>Milky Way</h2>
+        <p class="tagline">One galaxy among hundreds of billions</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> Our galaxy holds an estimated 100–400 billion stars.</div>
+          <div class="fact"><b>Fact:</b> Crossing it at light speed would take about 100,000 years.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="level" id="l4">
+      <div class="card">
+        <div class="visual">
+          <img src="images/universe.jpg" alt="Universe" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">🕳️</span>
+        </div>
+        <h2>Universe</h2>
+        <p class="tagline">Everything, everywhere</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> The observable universe stretches about 93 billion light-years across.</div>
+          <div class="fact"><b>Fact:</b> There are more stars in the universe than grains of sand on every beach on Earth.</div>
+        </div>
+        <button class="nb" id="quizBtn" onclick="openQuiz()" style="margin-top:16px;">🚀 Take the Quiz</button>
+      </div>
+    </section>
+
+    <section class="level" id="l5">
+      <div class="card">
+        <div class="visual">
+          <img src="images/multiverse.jpg" alt="Multiverse" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <span class="emoji-fallback">🌀</span>
+        </div>
+        <h2>Multiverse</h2>
+        <p class="tagline">Beyond our universe — theory, not proof</p>
+        <div class="facts">
+          <div class="fact"><b>Fact:</b> Some cosmological theories suggest our universe may be one "bubble" among countless others.</div>
+          <div class="fact"><b>Fact:</b> No experiment has ever detected another universe — it remains firmly in the realm of theory.</div>
+        </div>
+        <button class="nb" onclick="idx=0;update();" style="margin-top:16px;">🔁 Restart Journey</button>
+      </div>
+    </section>
+
+  </div><!-- /#slider -->
+
+  <!-- Bottom navigation: progress dots + prev/next -->
+  <nav class="ctrl">
+    <div class="dots" id="dots"></div>
+    <div class="btnrow">
+      <button class="nb" id="prevBtn" onclick="go(-1)">◀ PREV</button>
+      <button class="nb" id="nextBtn" onclick="go(1)">NEXT ▶</button>
+    </div>
+  </nav>
+
+  <!-- Mini astronomy quiz, opened from the Universe level -->
+  <div id="quizModal">
+    <div class="qbox">
+      <h3 id="qTitle">Astronomy Quiz</h3>
+      <div id="qBody"></div>
+      <div id="qScore"></div>
+      <button class="nb" id="closeQuiz" onclick="closeQuiz()">Close</button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- All behaviour lives in js/script.js. `defer` keeps it non-blocking
+     while still guaranteeing the DOM above is ready when it runs. -->
+<script src="js/script.js" defer></script>
+</body>
+</html>

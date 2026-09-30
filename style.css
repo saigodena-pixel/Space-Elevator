@@ -1,0 +1,232 @@
+/* ============================================================
+   SPACE ELEVATOR — Stylesheet
+   Organized top to bottom in the order things appear on screen:
+   1. Reset & theme variables
+   2. Starfield canvas
+   3. Header
+   4. Level slider (the 5–7 "scale" screens)
+   5. Level visuals (photo circles) + zoom/pan interaction states
+   6. Header icon buttons & the random-fact toast
+   7. Solar System planet buttons
+   8. Bottom nav (dots + prev/next)
+   9. Quiz modal
+   10. Responsive tweaks
+   11. Landing page ("elevator lobby") + door travel overlay
+   ============================================================ */
+
+/* ---------- 1. Reset & theme variables ---------- */
+:root{
+  --bg:#05060f; --bg2:#0a0e23; --panel:rgba(255,255,255,0.06);
+  --text:#eef1ff; --sub:#a9b0d6; --accent:#7cf; --accent2:#f7a; --accent3:#ffd76a;
+  --border:rgba(255,255,255,0.14);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:inherit;margin:0;padding:0;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+html,body{height:100%;}
+body{
+  font-family:'Rubik',sans-serif; color:var(--text);
+  background:radial-gradient(ellipse at 50% -10%,#141a44 0%,var(--bg2) 45%,var(--bg) 100%);
+  overflow:hidden; position:relative;
+}
+h1,h2,.brand{font-family:'Orbitron',sans-serif;}
+
+/* ---------- 2. Starfield canvas ---------- */
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+
+/* ---------- 3. Header ---------- */
+header{
+  position:fixed; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:20;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  padding:14px 20px; backdrop-filter:blur(6px); background:rgba(5,6,15,0.35);
+}
+.brand{font-size:1.05rem; letter-spacing:2px; font-weight:700; color:var(--accent3);}
+.brand span{color:var(--accent);}
+#scaleTag{font-size:.75rem; color:var(--sub); letter-spacing:1px;}
+
+/* ---------- 4. Level slider ---------- */
+#slider{
+  display:flex; height:100%;
+  transition:transform .8s cubic-bezier(.65,0,.35,1);
+  will-change:transform;
+}
+.level{
+  width:100vw; flex:0 0 100vw; height:100%; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  padding:90px 20px 120px;
+}
+.card{
+  max-width:640px; width:100%; text-align:center;
+  animation:fadeUp .7s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.level h2{font-size:1.9rem;margin-bottom:6px;letter-spacing:1px;}
+.tagline{color:var(--sub);font-size:.95rem;margin-bottom:18px;}
+.facts{display:grid;gap:10px;text-align:left;}
+.fact{
+  background:var(--panel); border:1px solid var(--border); border-radius:12px;
+  padding:12px 16px; font-size:.92rem; color:#dfe3ff;
+}
+.fact b{color:var(--accent3);}
+
+/* Per-level accent colors/backgrounds shown behind the photo circle
+   (and as a fallback glow if a real photo hasn't been added yet) */
+#l0 .visual{background:radial-gradient(circle at 35% 30%,#8ef,#116,transparent 70%);--glow:rgba(120,220,255,.5);}
+#l1 .visual{background:radial-gradient(circle at 35% 30%,#7fd1ff,#1a5fae 60%,#0a2a52);--glow:rgba(90,170,255,.55);}
+#l2 .visual{background:radial-gradient(circle at 35% 30%,#ffd76a,#ff8a3d 55%,#5a2200);--glow:rgba(255,170,80,.5);}
+#l3 .visual{background:radial-gradient(circle at 30% 25%,#fff,#c9c 30%,#3a2060 70%);--glow:rgba(200,150,255,.5);}
+#l4 .visual{background:radial-gradient(circle at 30% 25%,#fff,#556 40%,#000 80%);--glow:rgba(255,255,255,.4);}
+#l5 .visual{background:conic-gradient(from 90deg,#f7a,#7cf,#ffd76a,#f7a);--glow:rgba(200,120,255,.5);animation:spin 8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ---------- 5. Level visuals: photo circle + zoom/pan interaction ---------- */
+.visual{
+  width:190px;height:190px;margin:0 auto 22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:5rem;
+  position:relative; cursor:pointer; touch-action:none;
+  box-shadow:0 0 60px 10px var(--glow,rgba(120,200,255,.35)); overflow:hidden;
+}
+.visual img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+/* Shown automatically (via the <img onerror>) if a real photo file is missing */
+.visual .emoji-fallback{
+  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+}
+/* "active" = the user has clicked once and the image is now following the
+   mouse; "resetting" adds a smooth snap-back transition when turned off */
+.visual:active{cursor:crosshair;}
+.visual.active{cursor:crosshair;}
+.visual.resetting{transition:transform .3s ease;}
+/* Small magnifying-glass hint badge shown on every level photo */
+.visual::after{
+  content:'🔍'; position:absolute; bottom:6px; right:6px; font-size:1rem; z-index:3;
+  background:rgba(0,0,0,.55); border-radius:50%; width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center; pointer-events:none;
+}
+
+/* ---------- 6. Header icon buttons & random-fact toast ---------- */
+.iconbtn{
+  background:var(--panel); border:1px solid var(--border); color:var(--text);
+  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+}
+#headerBtns{display:flex;gap:8px;align-items:center;}
+#factToast{
+  position:fixed; left:50%; top:70px; transform:translateX(-50%) translateY(-10px);
+  z-index:30; background:#12143a; border:1px solid var(--accent3); color:var(--accent3);
+  padding:10px 18px; border-radius:12px; font-size:.85rem; max-width:320px; text-align:center;
+  opacity:0; pointer-events:none; transition:opacity .3s, transform .3s;
+}
+#factToast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* ---------- 7. Solar System planet buttons ---------- */
+.planets{display:flex;gap:14px;justify-content:center;margin:16px 0;flex-wrap:wrap;}
+.pl{
+  width:44px;height:44px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  transition:transform .25s;
+}
+.pl:hover,.pl:focus{transform:scale(1.25);}
+#planetInfo{min-height:26px;font-size:.85rem;color:var(--accent3);margin-top:4px;}
+
+/* ---------- 8. Bottom nav (dots + prev/next) ---------- */
+nav.ctrl{
+  position:fixed; left:0; right:0; bottom:0; z-index:20;
+  padding:16px 20px calc(16px + env(safe-area-inset-bottom,0px));
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  background:linear-gradient(to top, rgba(5,6,15,.75), transparent);
+}
+.dots{display:flex;gap:9px;}
+.dot{width:9px;height:9px;border-radius:50%;background:#3a3f66;cursor:pointer;transition:.3s;}
+.dot.active{background:var(--accent3);box-shadow:0 0 8px var(--accent3);}
+.btnrow{display:flex;gap:14px;align-items:center;}
+button.nb{
+  font-family:'Orbitron',sans-serif; font-size:.8rem; letter-spacing:1px;
+  background:var(--panel); border:1px solid var(--border); color:var(--text);
+  padding:11px 20px; border-radius:30px; cursor:pointer; transition:.2s;
+}
+button.nb:hover{background:rgba(255,255,255,.14);}
+button.nb:disabled{opacity:.3;cursor:default;}
+#quizBtn{border-color:var(--accent3);color:var(--accent3);}
+
+/* ---------- 9. Quiz modal ---------- */
+#quizModal{
+  position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,10,.7); padding:20px;
+}
+#quizModal.open{display:flex;}
+.qbox{
+  background:#0d1030;border:1px solid var(--border);border-radius:16px;
+  max-width:420px;width:100%;padding:24px;text-align:center;
+}
+.qbox h3{font-family:'Orbitron',sans-serif;margin-bottom:14px;color:var(--accent3);}
+.qopt{
+  display:block;width:100%;margin:8px 0;padding:10px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:.9rem;
+}
+.qopt.correct{background:rgba(120,255,150,.25);border-color:#7f7;}
+.qopt.wrong{background:rgba(255,110,110,.25);border-color:#f77;}
+#closeQuiz{margin-top:16px;}
+#qScore{color:var(--sub);font-size:.85rem;margin-top:8px;}
+
+/* ---------- 10. Responsive tweaks ---------- */
+@media (max-width:520px){
+  .visual{width:140px;height:140px;font-size:3.6rem;}
+  .level h2{font-size:1.5rem;}
+}
+
+/* ---------- 11. Landing page ("elevator lobby") + door overlay ---------- */
+#app{display:none;height:100%;}
+#landing{
+  position:fixed;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:24px;overflow:auto;
+}
+.landingInner{max-width:520px;width:100%;}
+.landingInner h1{font-size:1.7rem;letter-spacing:3px;margin-bottom:6px;}
+.landingInner h1 span{color:var(--accent);}
+.landingSub{color:var(--sub);margin-bottom:26px;font-size:.9rem;}
+.elevatorWrap{display:flex;gap:20px;align-items:stretch;justify-content:center;flex-wrap:wrap;}
+.elevatorCar{
+  width:150px;height:280px;border:3px solid var(--border);border-radius:14px;
+  background:linear-gradient(180deg,#1a1f45,#0a0e23);position:relative;overflow:hidden;
+  box-shadow:0 0 40px rgba(120,180,255,.25); flex-shrink:0;
+}
+.doors{position:absolute;inset:0;display:flex;top:44px;}
+.door{flex:1;background:linear-gradient(180deg,#2a3060,#141833);transition:transform .8s ease;}
+.door.left{transform:translateX(-100%);border-right:1px solid rgba(255,255,255,.1);}
+.door.right{transform:translateX(100%);border-left:1px solid rgba(255,255,255,.1);}
+.floorDisplay{
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  font-family:'Orbitron'; font-size:1.3rem; color:var(--accent3);
+  background:#000; padding:3px 14px; border-radius:6px; border:1px solid var(--border); z-index:2;
+}
+/* The call panel's floor buttons are generated by script.js */
+.panel{
+  display:flex; flex-direction:column-reverse; gap:7px;
+  background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px;
+  justify-content:center; max-height:280px; overflow-y:auto;
+}
+.floorBtn{
+  display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.05);
+  border:1px solid var(--border); border-radius:10px; padding:9px 12px; cursor:pointer;
+  color:var(--text); font-family:'Rubik'; text-align:left; transition:.2s; font-size:.85rem;
+}
+.floorBtn:hover{background:rgba(255,255,255,.14); transform:translateX(4px);}
+.floorNum{
+  font-family:'Orbitron'; color:var(--accent3); min-width:30px; text-align:center; font-size:.8rem;
+  border:1px solid var(--border); border-radius:6px; padding:3px 4px;
+}
+
+/* Full-screen doors that close/open during floor-to-floor travel */
+#doorOverlay{position:fixed;inset:0;z-index:60;display:flex;pointer-events:none;}
+.doorOv{flex:1;background:linear-gradient(180deg,#22265a,#05060f);transition:transform .6s cubic-bezier(.65,0,.35,1);}
+.doorOv.left{transform:translateX(-100%);}
+.doorOv.right{transform:translateX(100%);}
+#doorOverlay.closed .doorOv{transform:translateX(0%);}
+.travelDisplay{
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-family:'Orbitron'; font-size:2.4rem; color:var(--accent3); z-index:61;
+  opacity:0; transition:opacity .3s;
+}
+#doorOverlay.closed .travelDisplay{opacity:1;}
